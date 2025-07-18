@@ -153,6 +153,7 @@ FfxErrorCode ffxFsr3ContextCreate(FfxFsr3Context* context, FfxFsr3ContextDescrip
 		FFX_VALIDATE(ffxFsr3UpscalerContextCreate(&contextPrivate->upscalerContext, &upDesc));
 	}
 
+#if defined(FFX_OF) && defined(FFX_IF)
     if (!upscalingOnly)
     {
 
@@ -189,6 +190,7 @@ FfxErrorCode ffxFsr3ContextCreate(FfxFsr3Context* context, FfxFsr3ContextDescrip
         FFX_VALIDATE(contextDescription->backendInterfaceSharedResources.fpCreateResource(
             &contextDescription->backendInterfaceSharedResources, &ofResourceDescs.opticalFlowSCD, contextPrivate->effectContextIdSharedResources, &contextPrivate->sharedResources[FFX_FSR3_RESOURCE_IDENTIFIER_OPTICAL_FLOW_SCD_OUTPUT]));
     }
+#endif // FFX_OF && FFX_IF
 
     // set up FSR3Upscaler resources
     if (!contextPrivate->interpolationOnly)
@@ -241,6 +243,7 @@ FfxErrorCode ffxFsr3ContextGenerateReactiveMask(FfxFsr3Context* context, const F
     return ffxFsr3UpscalerContextGenerateReactiveMask(&contextPrivate->upscalerContext, &fsr3Params);
 }
 
+#if defined(FFX_OF) && defined(FFX_IF)
 FfxErrorCode ffxFsr3DispatchFrameGeneration(const FfxFrameGenerationDispatchDescription* callbackDesc)
 {
     FfxErrorCode errorCode = FFX_OK;
@@ -327,6 +330,7 @@ FfxErrorCode ffxFsr3DispatchFrameGeneration(const FfxFrameGenerationDispatchDesc
 
     return errorCode;
 }
+#endif // FFX_OF && FFX_IF
 
 FfxErrorCode ffxFsr3ContextDispatchUpscale(FfxFsr3Context* context, const FfxFsr3DispatchUpscaleDescription* dispatchParams)
 {
@@ -394,6 +398,7 @@ FfxErrorCode ffxFsr3ContextDispatchUpscale(FfxFsr3Context* context, const FfxFsr
     return ret;
 }
 
+#if defined(FFX_OF) && defined(FFX_IF)
 FfxErrorCode ffxFsr3ContextDispatchFrameGenerationPrepare(FfxFsr3Context* context, const FfxFsr3DispatchFrameGenerationPrepareDescription* dispatchParams)
 {
     FfxErrorCode            ret            = FFX_OK;
@@ -486,6 +491,7 @@ FfxErrorCode ffxFsr3ConfigureFrameGeneration(FfxFsr3Context* context, const FfxF
 
     return contextPrivate->backendInterfaceFrameInterpolation.fpSwapChainConfigureFrameGeneration(&patchedConfig);
 }
+#endif // FFX_OF && FFX_IF
 
 FfxErrorCode ffxFsr3ContextDestroy(FfxFsr3Context* context)
 {
@@ -499,6 +505,8 @@ FfxErrorCode ffxFsr3ContextDestroy(FfxFsr3Context* context)
     bool upscalingOnly     = (contextPrivate->description.flags & FFX_FSR3_ENABLE_UPSCALING_ONLY) != 0;
     bool interpolationOnly = (contextPrivate->description.flags & FFX_FSR3_ENABLE_INTERPOLATION_ONLY) != 0;
 
+#if defined(FFX_OF) && defined(FFX_IF)
+
     if (!upscalingOnly)
     {
         FFX_VALIDATE(ffxFrameInterpolationContextDestroy(&contextPrivate->fiContext));
@@ -506,6 +514,8 @@ FfxErrorCode ffxFsr3ContextDestroy(FfxFsr3Context* context)
         contextPrivate->backendInterfaceSharedResources.fpDestroyBackendContext(&contextPrivate->backendInterfaceSharedResources,contextPrivate->effectContextIdSharedResources);
 
     }
+    
+#endif // FFX_OF && FFX_IF
 
     if (!interpolationOnly)
     {

@@ -212,7 +212,9 @@ typedef struct FfxFsr3DispatchFrameGenerationPrepareDescription
     uint64_t                    frameID;
 } FfxFsr3DispatchFrameGenerationPrepareDescription;
 
+#if defined(FFX_OF) && defined(FFX_IF)
 FFX_API FfxErrorCode ffxFsr3DispatchFrameGeneration(const FfxFrameGenerationDispatchDescription* desc);
+#endif // FFX_OF && FFX_IF
 
 /// A structure encapsulating the parameters for automatic generation of a reactive mask
 ///
@@ -334,7 +336,10 @@ FFX_API FfxErrorCode ffxFsr3ContextCreate(FfxFsr3Context* context, FfxFsr3Contex
 ///
 /// @ingroup FSR3
 FFX_API FfxErrorCode ffxFsr3ContextDispatchUpscale(FfxFsr3Context* context, const FfxFsr3DispatchUpscaleDescription* dispatchParams);
+
+#if defined(FFX_OF) && defined(FFX_IF)
 FFX_API FfxErrorCode ffxFsr3ContextDispatchFrameGenerationPrepare(FfxFsr3Context* context, const FfxFsr3DispatchFrameGenerationPrepareDescription* dispatchParams);
+#endif // FFX_OF && FFX_IF
 
 FFX_API FfxErrorCode ffxFsr3SkipPresent(FfxFsr3Context* context);
 
@@ -349,7 +354,9 @@ FFX_API FfxErrorCode ffxFsr3SkipPresent(FfxFsr3Context* context);
 /// @ingroup FSR3
 FFX_API FfxErrorCode ffxFsr3ContextGenerateReactiveMask(FfxFsr3Context* context, const FfxFsr3GenerateReactiveDescription* params);
 
+#if defined(FFX_OF) && defined(FFX_IF)
 FFX_API FfxErrorCode ffxFsr3ConfigureFrameGeneration(FfxFsr3Context* context, const FfxFrameGenerationConfig* config);
+#endif // FFX_OF && FFX_IF
 
 /// Destroy the FidelityFX Super Resolution context.
 ///
