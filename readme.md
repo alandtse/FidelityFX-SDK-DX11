@@ -1,3 +1,6 @@
+## Build libs
+Run `BuildFidelityFXDX11.bat` from the `sdk` folder. Compiled libs are located in `sdk\bin`.
+
 <h1>Welcome to the FidelityFX Super Resolution 3 SDK</h1>
 
 ![alt text](/docs/media/fidelityfxsdk-logo-rescaled.png)
