@@ -95,6 +95,7 @@ endif()
 # Add requred compile definitions
 add_compile_definitions(_UNICODE)
 add_compile_definitions(UNICODE)
+add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR) # Fixes crashes with older redists
 
 if(FFX_VS_VERSION STREQUAL 2015 OR FFX_VS_VERSION STREQUAL 2017)
     message(NOTICE "Forcing the SDK path for VS 2015 and VS 2017")
