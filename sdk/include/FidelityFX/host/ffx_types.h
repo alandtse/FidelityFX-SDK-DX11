@@ -224,7 +224,7 @@ typedef uint32_t FfxUInt32x4[4];
 /// @ingroup ffxHost
 
 
-/// An enumeration of surface formats.
+/// An enumeration of surface formats. Needs to match enum FfxApiSurfaceFormat
 ///
 /// @ingroup SDKTypes
 typedef enum FfxSurfaceFormat {
@@ -285,6 +285,7 @@ typedef enum FfxResourceStates {
     FFX_RESOURCE_STATE_INDIRECT_ARGUMENT    = (1 << 6), ///< Indicates a resource is in the state to be used as an indirect command argument
     FFX_RESOURCE_STATE_PRESENT              = (1 << 7), ///< Indicates a resource is in the state to be used to present to the swap chain
     FFX_RESOURCE_STATE_RENDER_TARGET        = (1 << 8), ///< Indicates a resource is in the state to be used as render target
+    FFX_RESOURCE_STATE_DEPTH_ATTACHEMENT    = (1 << 9), ///< Indicates a resource is in the state to be used as depth attachment
 } FfxResourceStates;
 
 /// An enumeration of surface dimensions.
@@ -431,6 +432,8 @@ typedef enum FfxBarrierType
     FFX_BARRIER_TYPE_TRANSITION = 0,
     FFX_BARRIER_TYPE_UAV,
 } FfxBarrierType;
+
+typedef void (*ffxMessageCallback)(uint32_t type, const wchar_t* message);
 
 /// An enumeration for message types that can be passed
 ///
@@ -933,6 +936,23 @@ typedef struct FfxFrameGenerationDispatchDescription {
     FfxRect2D                       interpolationRect;              ///< The area of the backbuffer that should be used for interpolation in case only a part of the screen is used e.g. due to movie bars
     uint64_t                        frameID;
 } FfxFrameGenerationDispatchDescription;
+
+//struct definition matches FfxApiEffectMemoryUsage
+typedef struct FfxEffectMemoryUsage
+{
+    uint64_t totalUsageInBytes;
+    uint64_t aliasableUsageInBytes;
+} FfxEffectMemoryUsage;
+
+//struct definition matches FfxApiSwapchainFramePacingTuning
+typedef struct FfxSwapchainFramePacingTuning
+{
+    float    safetyMarginInMs; // in Millisecond
+    float    varianceFactor; // valid range [0.0,1.0]
+    bool     allowHybridSpin; //Allows pacing spinlock to sleep.
+    uint32_t hybridSpinTime;  //How long to spin when hybridSpin is enabled. Measured in timer resolution units. Not recommended to go below 2. Will result in frequent overshoots.
+    bool     allowWaitForSingleObjectOnFence; //Allows to call WaitForSingleObject() instead of spinning for fence value.
+} FfxSwapchainFramePacingTuning;
 
 #ifdef __cplusplus
 }

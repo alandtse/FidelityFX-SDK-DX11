@@ -227,6 +227,7 @@ typedef enum FfxFrameInterpolationDispatchFlags
     FFX_FRAMEINTERPOLATION_DISPATCH_DRAW_DEBUG_TEAR_LINES       = (1 << 0),  ///< A bit indicating that the debug tear lines will be drawn to the interpolated output.
     FFX_FRAMEINTERPOLATION_DISPATCH_DRAW_DEBUG_RESET_INDICATORS = (1 << 1),  ///< A bit indicating that the debug reset indicators will be drawn to the generated output.
     FFX_FRAMEINTERPOLATION_DISPATCH_DRAW_DEBUG_VIEW             = (1 << 2),  ///< A bit indicating that the interpolated output resource will contain debug views with relevant information.
+    FFX_FRAMEINTERPOLATION_DISPATCH_DRAW_DEBUG_PACING_LINES     = (1 << 3),  ///< A bit indicating that the debug pacing lines will be drawn to the generated output.
 } FfxFrameInterpolationDispatchFlags;
 
 typedef struct FfxFrameInterpolationDispatchDescription {
