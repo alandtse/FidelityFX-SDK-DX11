@@ -43,7 +43,7 @@
 /// FidelityFX Super Resolution 3 patch version.
 ///
 /// @ingroup FSR3
-#define FFX_FSR3_VERSION_PATCH      (4)
+#define FFX_FSR3_VERSION_PATCH      (5)
 
 /// FidelityFX Super Resolution 3 context count
 ///
