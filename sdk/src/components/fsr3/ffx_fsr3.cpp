@@ -376,6 +376,7 @@ FfxErrorCode ffxFsr3ContextDispatchUpscale(FfxFsr3Context* context, const FfxFsr
     fsr3DispatchParams.jitterOffset                     = dispatchParams->jitterOffset;
     fsr3DispatchParams.motionVectorScale                = dispatchParams->motionVectorScale;
     fsr3DispatchParams.renderSize                       = dispatchParams->renderSize;
+    fsr3DispatchParams.upscaleSize                      = dispatchParams->upscaleSize;
     fsr3DispatchParams.enableSharpening                 = dispatchParams->enableSharpening;
     fsr3DispatchParams.sharpness                        = dispatchParams->sharpness;
     fsr3DispatchParams.frameTimeDelta                   = dispatchParams->frameTimeDelta;
