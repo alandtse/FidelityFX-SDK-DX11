@@ -60,6 +60,38 @@ function(compile_shaders EXECUTABLE BASE_ARGS DX11_BASE_ARGS PERMUTATION_ARGS IN
 		# combine base and permutation args
 		set(SC_ARGS ${BASE_ARGS} ${DX11_BASE_ARGS} ${PERMUTATION_ARGS} -disable-logs)
 
+		if(CMAKE_HOST_UNIX)
+			# A Linux/macOS host's Ninja generator runs each COMMAND via
+			# `/bin/sh -c`, joining the COMMAND list into one shell string.
+			# macOS's /bin/sh (bash in sh-compat mode) still performs brace
+			# expansion on that string, so an unescaped -DOPTION={0,1}
+			# permutation-list argument silently splits into two separate
+			# -DOPTION=0 / -DOPTION=1 words passed to a SINGLE
+			# FidelityFX_SC.exe invocation instead of two separate ones --
+			# defining both values in one pass, which cascades into bogus
+			# HLSL parse errors ("Unexpected modifier used on a function",
+			# duplicate 'case' statements, etc.).
+			#
+			# Deliberately no VERBATIM here: VERBATIM's contract is that the
+			# child process receives each element's content byte-for-byte,
+			# which would faithfully deliver a literal backslash character
+			# to FidelityFX_SC.exe (it doesn't accept one, rejecting the
+			# argument as "mixing numeric and string values"). What's
+			# actually needed is the opposite: active, shell-consumed
+			# escaping. An unquoted backslash before "{"/"}" in the raw
+			# command string is the standard way to suppress bash brace
+			# expansion; the shell strips the backslash itself while
+			# parsing, so the tool ends up receiving the original,
+			# unmodified "{0,1}" text with nothing extra attached.
+			set(SC_ARGS_ESCAPED)
+			foreach(_sc_arg ${SC_ARGS})
+				string(REPLACE "{" "\\{" _sc_arg "${_sc_arg}")
+				string(REPLACE "}" "\\}" _sc_arg "${_sc_arg}")
+				list(APPEND SC_ARGS_ESCAPED "${_sc_arg}")
+			endforeach()
+			set(SC_ARGS ${SC_ARGS_ESCAPED})
+		endif()
+
 		if (USE_DEPFILE)
 			# Wave32
 			add_custom_command(
@@ -210,12 +242,24 @@ if (FFX_FSR OR FFX_ALL)
 		"${FFX_SRC_BACKENDS_PATH}/shared/blob_accessors/ffx_fsr2_shaderblobs.h"
 		"${FFX_SRC_BACKENDS_PATH}/shared/blob_accessors/ffx_fsr2_shaderblobs.cpp"
 		"${FFX_SRC_BACKENDS_PATH}/shared/blob_accessors/ffx_fsr3upscaler_shaderblobs.h"
-		"${FFX_SRC_BACKENDS_PATH}/shared/blob_accessors/ffx_fsr3upscaler_shaderblobs.cpp"
+		"${FFX_SRC_BACKENDS_PATH}/shared/blob_accessors/ffx_fsr3upscaler_shaderblobs.cpp")
+	list(APPEND PRIVATE_SOURCE ${FFX_FSR_PRIVATE_SOURCE})
+endif()
+
+# FFX_FI/FFX_OF exist as options (sdk/CMakeLists.txt) but were never wired
+# into this backend -- frame interpolation/optical flow were always bundled
+# unconditionally into the FFX_FSR block above. Split them out so a
+# consumer that only needs FSR3 Upscaler (no frame generation) can disable
+# either independently.
+if ((FFX_FSR OR FFX_ALL) AND FFX_FI)
+	list(APPEND PRIVATE_SOURCE
 		"${FFX_SRC_BACKENDS_PATH}/shared/blob_accessors/ffx_frameinterpolation_shaderblobs.h"
-		"${FFX_SRC_BACKENDS_PATH}/shared/blob_accessors/ffx_frameinterpolation_shaderblobs.cpp"
+		"${FFX_SRC_BACKENDS_PATH}/shared/blob_accessors/ffx_frameinterpolation_shaderblobs.cpp")
+endif()
+if ((FFX_FSR OR FFX_ALL) AND FFX_OF)
+	list(APPEND PRIVATE_SOURCE
 		"${FFX_SRC_BACKENDS_PATH}/shared/blob_accessors/ffx_opticalflow_shaderblobs.h"
 		"${FFX_SRC_BACKENDS_PATH}/shared/blob_accessors/ffx_opticalflow_shaderblobs.cpp")
-	list(APPEND PRIVATE_SOURCE ${FFX_FSR_PRIVATE_SOURCE})
 endif()
 
 if (FFX_SPD OR FFX_ALL)
@@ -358,8 +402,12 @@ if (FFX_FSR OR FFX_ALL)
 
     # FFX_FSR3 is currently only defined in DX11 native backend
     target_compile_definitions(ffx_backend_dx11_${FFX_PLATFORM_NAME} PRIVATE FFX_FSR3)
-	include (CMakeShadersFrameinterpolation.txt)
-	include (CMakeShadersOpticalflow.txt)
+	if(FFX_FI)
+		include (CMakeShadersFrameinterpolation.txt)
+	endif()
+	if(FFX_OF)
+		include (CMakeShadersOpticalflow.txt)
+	endif()
 	include (CMakeShadersFSR3Upscaler.txt)
 	include (CMakeShadersFSR2.txt)
 	include (CMakeShadersFSR1.txt)

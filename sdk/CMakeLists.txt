@@ -113,6 +113,25 @@ endif()
 
 # Setup common variables
 set(FFX_SC_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/tools/binary_store/FidelityFX_SC.exe)
+
+# A Linux/macOS host cross-compiling to the Windows PE/MSVC-ABI target (see
+# open-shaders' Linux-ClangCL preset) can't run this bundled Windows PE tool
+# directly; wrap it to run under Wine. Every CMakeShaders*.txt file across
+# all backends invokes ${FFX_SC_EXECUTABLE} directly as COMMAND, so patching
+# this single definition covers all of them.
+if(CMAKE_HOST_UNIX)
+    find_program(FFX_SC_WINE_EXECUTABLE NAMES wine)
+    if(NOT FFX_SC_WINE_EXECUTABLE)
+        message(FATAL_ERROR "FidelityFX-SDK: cross-compiling from a Linux/macOS host needs `wine` on PATH to run the bundled FidelityFX_SC.exe shader compiler.")
+    endif()
+    set(FFX_SC_WINE_WRAPPER "${CMAKE_CURRENT_BINARY_DIR}/FidelityFX_SC_wine.sh")
+    file(WRITE "${FFX_SC_WINE_WRAPPER}" "#!/bin/sh\nexec \"${FFX_SC_WINE_EXECUTABLE}\" \"${FFX_SC_EXECUTABLE}\" \"$@\"\n")
+    file(
+        CHMOD "${FFX_SC_WINE_WRAPPER}"
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    )
+    set(FFX_SC_EXECUTABLE "${FFX_SC_WINE_WRAPPER}")
+endif()
 set(FFX_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(FFX_SHARED_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/shared)
 set(FFX_HOST_PATH ${CMAKE_CURRENT_SOURCE_DIR}/include/FidelityFX/host)
