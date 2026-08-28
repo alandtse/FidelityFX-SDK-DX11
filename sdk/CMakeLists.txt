@@ -124,12 +124,57 @@ if(CMAKE_HOST_UNIX)
     if(NOT FFX_SC_WINE_EXECUTABLE)
         message(FATAL_ERROR "FidelityFX-SDK: cross-compiling from a Linux/macOS host needs `wine` on PATH to run the bundled FidelityFX_SC.exe shader compiler.")
     endif()
-    set(FFX_SC_WINE_WRAPPER "${CMAKE_CURRENT_BINARY_DIR}/FidelityFX_SC_wine.sh")
-    file(WRITE "${FFX_SC_WINE_WRAPPER}" "#!/bin/sh\nexec \"${FFX_SC_WINE_EXECUTABLE}\" \"${FFX_SC_EXECUTABLE}\" \"$@\"\n")
-    file(
-        CHMOD "${FFX_SC_WINE_WRAPPER}"
-        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+
+    # Wine ships its own built-in d3dcompiler_47.dll (a partial
+    # reimplementation, not Microsoft's real compiler), which
+    # FidelityFX_SC.exe's `-compiler=fxc` mode resolves by default via
+    # ordinary DLL search order. That builtin's HLSL parser has real bugs
+    # (observed: rejects `globallycoherent`, some switch/case patterns, and
+    # -- distinctly from a genuine upstream bug -- misparses valid syntax
+    # that a real d3dcompiler_47.dll accepts fine), which surfaces as
+    # seemingly-random "ffx_sc failed: No shader permutations generated"
+    # errors that don't reproduce on native Windows. Explicitly pointing
+    # `-d3ddll=` at a real d3dcompiler_47.dll (same source already trusted
+    # by the DirectXTK/DirectXTex overlay ports' fxc2 workaround) routes
+    # around Wine's builtin entirely; verified this alone fixes real
+    # FSR1/FSR2/FSR3Upscaler shaders that failed under the builtin DLL.
+    set(FFX_SC_D3DCOMPILER_DLL "${CMAKE_CURRENT_BINARY_DIR}/d3dcompiler_47.dll")
+    if(NOT EXISTS "${FFX_SC_D3DCOMPILER_DLL}")
+        file(
+            DOWNLOAD "https://raw.githubusercontent.com/WasabiIceCream/fxc2/v1.0.0/d3dcompiler_47.dll"
+            "${FFX_SC_D3DCOMPILER_DLL}"
+            EXPECTED_HASH SHA512=ad8c7ce7f6f353da5e2cf816e1a69f1ec14011612e8041e4f9bb6ebed3e0fa4e4ebc069155a0c66e23811467012c201893b9b3b7a947d089ce2c749d5e8910c6
+        )
+    endif()
+    find_program(FFX_SC_WINEPATH_EXECUTABLE NAMES winepath)
+    if(NOT FFX_SC_WINEPATH_EXECUTABLE)
+        message(FATAL_ERROR "FidelityFX-SDK: `winepath` (ships alongside `wine`) not found on PATH.")
+    endif()
+    execute_process(
+        COMMAND "${FFX_SC_WINEPATH_EXECUTABLE}" -w "${FFX_SC_D3DCOMPILER_DLL}"
+        OUTPUT_VARIABLE FFX_SC_D3DCOMPILER_DLL_WINPATH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+
+    # This wrapper is the COMMAND executable for every shader-generation
+    # custom command in every backend (hundreds of them, each a real Wine
+    # invocation). Unconditional file(WRITE ...) here would bump its mtime
+    # on every single reconfigure, which Ninja's dependency tracking treats
+    # as "this executable changed" -- invalidating and re-running every one
+    # of those custom commands (multiple real minutes of Wine invocations)
+    # even for a reconfigure that touched nothing shader-related. Guard it
+    # the same way the d3dcompiler_47.dll download above already is.
+    set(FFX_SC_WINE_WRAPPER "${CMAKE_CURRENT_BINARY_DIR}/FidelityFX_SC_wine.sh")
+    if(NOT EXISTS "${FFX_SC_WINE_WRAPPER}")
+        file(
+            WRITE "${FFX_SC_WINE_WRAPPER}"
+            "#!/bin/sh\nexec \"${FFX_SC_WINE_EXECUTABLE}\" \"${FFX_SC_EXECUTABLE}\" \"-d3ddll=${FFX_SC_D3DCOMPILER_DLL_WINPATH}\" \"$@\"\n"
+        )
+        file(
+            CHMOD "${FFX_SC_WINE_WRAPPER}"
+            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        )
+    endif()
     set(FFX_SC_EXECUTABLE "${FFX_SC_WINE_WRAPPER}")
 endif()
 set(FFX_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/include)

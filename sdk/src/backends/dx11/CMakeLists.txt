@@ -404,9 +404,18 @@ if (FFX_FSR OR FFX_ALL)
     target_compile_definitions(ffx_backend_dx11_${FFX_PLATFORM_NAME} PRIVATE FFX_FSR3)
 	if(FFX_FI)
 		include (CMakeShadersFrameinterpolation.txt)
+		# ffx_shader_blobs.cpp's dispatch switch calls
+		# frameInterpolationGetPermutationBlobByIndex() unconditionally
+		# whenever FFX_FSR3 is defined, with no FFX_FI check of its own --
+		# propagate FFX_FI as a compile definition (matching every other
+		# effect's own FFX_<EFFECT> convention in this file) so that file
+		# can gate on it and avoid an undefined-symbol link error when
+		# FFX_FI is off but FFX_FSR3 is on.
+		target_compile_definitions(ffx_backend_dx11_${FFX_PLATFORM_NAME} PRIVATE FFX_FI)
 	endif()
 	if(FFX_OF)
 		include (CMakeShadersOpticalflow.txt)
+		target_compile_definitions(ffx_backend_dx11_${FFX_PLATFORM_NAME} PRIVATE FFX_OF)
 	endif()
 	include (CMakeShadersFSR3Upscaler.txt)
 	include (CMakeShadersFSR2.txt)
