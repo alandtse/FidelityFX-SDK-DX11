@@ -98,10 +98,22 @@ FfxErrorCode ffxGetPermutationBlobByIndex(
     #if defined(FFX_FSR3)
         case FFX_EFFECT_FSR3UPSCALER:
             return fsr3UpscalerGetPermutationBlobByIndex((FfxFsr3UpscalerPass)passId, permutationOptions, outBlob);
+        // FFX_FSR3 alone doesn't imply frame interpolation/optical flow are
+        // actually built: their backend .lib targets only exist when
+        // FFX_FI/FFX_OF (propagated here as their own compile
+        // definitions) are on, same condition as the CMakeShaders*.txt
+        // include and shader-generation for each. Calling these
+        // unconditionally under plain FFX_FSR3 is an undefined-symbol
+        // link error for a consumer that enables FSR3 Upscaler without
+        // frame generation.
+    #if defined(FFX_FI)
         case FFX_EFFECT_FRAMEINTERPOLATION:
             return frameInterpolationGetPermutationBlobByIndex((FfxFrameInterpolationPass)passId, stageId, permutationOptions, outBlob);
+    #endif
+    #if defined(FFX_OF)
         case FFX_EFFECT_OPTICALFLOW:
             return opticalflowGetPermutationBlobByIndex((FfxOpticalflowPass)passId, permutationOptions, outBlob);
+    #endif
     #endif
 #endif // #if defined(FFX_FSR) || defined(FFX_ALL)
 
