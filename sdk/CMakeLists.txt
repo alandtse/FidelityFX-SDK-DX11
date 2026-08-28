@@ -42,9 +42,12 @@ endif()
 endif()
 
 # Set platform
-if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64" OR CMAKE_EXE_LINKER_FLAGS STREQUAL "/machine:x64")
+# MATCHES (not STREQUAL): a cross-compile toolchain file can append its own
+# flags (e.g. /winsysroot:...) after /machine:x64, which would otherwise
+# fail an exact-equality check without changing the actual target arch.
+if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64" OR CMAKE_EXE_LINKER_FLAGS MATCHES "/machine:x64")
     set(FFX_PLATFORM_NAME x64)
-elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32" OR CMAKE_EXE_LINKER_FLAGS STREQUAL "/machine:X86")
+elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32" OR CMAKE_EXE_LINKER_FLAGS MATCHES "/machine:X86")
     set(FFX_PLATFORM_NAME x86)
 else()
     message(FATAL_ERROR "Unsupported target platform - only supporting x64 and Win32 currently")
