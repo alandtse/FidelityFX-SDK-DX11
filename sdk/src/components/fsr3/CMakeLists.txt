@@ -50,7 +50,24 @@ if (FFX_FSR3 OR FFX_ALL)
 	source_group("public_source"  FILES ${PUBLIC_SOURCES})
 
 	# Dependencies
-	target_link_libraries(ffx_fsr3_${FFX_PLATFORM_NAME} PRIVATE ffx_fsr3upscaler_${FFX_PLATFORM_NAME} ffx_opticalflow_${FFX_PLATFORM_NAME} ffx_frameinterpolation_${FFX_PLATFORM_NAME})
+	#
+	# ffx_opticalflow_${FFX_PLATFORM_NAME} and ffx_frameinterpolation_${FFX_PLATFORM_NAME}
+	# only exist as targets when FFX_OF/FFX_FI (or FFX_ALL) are on -- see
+	# their own component CMakeLists.txt guards -- so linking against them
+	# unconditionally here breaks a consumer that enables FFX_FSR3 but
+	# disables FFX_FI/FFX_OF (e.g. to use FSR3 Upscaler without frame
+	# generation): the linker fails with "could not open ... .lib" since
+	# target_link_libraries silently accepts a name with no matching target
+	# as a raw library-search-path string instead of erroring at configure
+	# time.
+	set(FFX_FSR3_LINK_LIBRARIES ffx_fsr3upscaler_${FFX_PLATFORM_NAME})
+	if (FFX_OF OR FFX_ALL)
+		list(APPEND FFX_FSR3_LINK_LIBRARIES ffx_opticalflow_${FFX_PLATFORM_NAME})
+	endif()
+	if (FFX_FI OR FFX_ALL)
+		list(APPEND FFX_FSR3_LINK_LIBRARIES ffx_frameinterpolation_${FFX_PLATFORM_NAME})
+	endif()
+	target_link_libraries(ffx_fsr3_${FFX_PLATFORM_NAME} PRIVATE ${FFX_FSR3_LINK_LIBRARIES})
 
 	target_include_directories(ffx_fsr3_${FFX_PLATFORM_NAME} PUBLIC ${FFX_INCLUDE_PATH})
 	target_include_directories(ffx_fsr3_${FFX_PLATFORM_NAME} PUBLIC ${FFX_SHARED_PATH})
