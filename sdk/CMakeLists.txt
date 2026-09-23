@@ -53,7 +53,9 @@ endif()
 # Pre-compile shaders
 set(FFX_AUTO_COMPILE_SHADERS ON CACHE BOOL "Compile shaders automatically as a prebuild step.")
 
-if(CMAKE_GENERATOR STREQUAL "Ninja")
+# FidelityFX_SC.exe writes depfile paths without escaping spaces, so Ninja sees
+# missing dependencies and regenerates every permutation header on each build.
+if(CMAKE_GENERATOR STREQUAL "Ninja" AND NOT CMAKE_CURRENT_SOURCE_DIR MATCHES " " AND NOT CMAKE_BINARY_DIR MATCHES " ")
     set(USE_DEPFILE TRUE)
 else()
     set(USE_DEPFILE FALSE)
